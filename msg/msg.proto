@@ -1,0 +1,60 @@
+syntax = "proto3";
+package msg;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option go_package = '.;msg';
+
+option (gogoproto.goproto_enum_prefix_all) = false;
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.goproto_stringer_all) = false;
+option (gogoproto.goproto_enum_stringer_all) = false;
+option (gogoproto.messagename_all) = false;
+
+// InitConnect
+// @Function
+// @Return: InitResponse
+message InitConnect {
+    fixed64 ClientNonce = 1;
+}
+
+// InitCompleteAuth
+// @Function
+// @Return: InitAuthCompleted
+message InitCompleteAuth {
+    fixed64 ClientNonce = 1;
+    fixed64 ServerNonce = 2;
+    bytes ClientDHPubKey = 5;
+    fixed64 P = 6;
+    fixed64 Q = 7;
+    bytes EncryptedPayload = 8;
+}
+
+// InitResponse
+message InitResponse {
+    fixed64 ClientNonce = 1;
+    fixed64 ServerNonce = 2;
+    fixed64 RSAPubKeyFingerPrint = 3;
+    fixed64 DHGroupFingerPrint = 4;
+    fixed64 PQ = 5;
+    int64 ServerTimestamp = 6;
+}
+
+// InitCompleteAuthInternal
+message InitCompleteAuthInternal {
+    bytes SecretNonce = 1;
+}
+
+// InitAuthCompleted
+message InitAuthCompleted {
+    fixed64 ClientNonce = 1;
+    fixed64 ServerNonce = 2;
+    enum Statuses {
+        OK = 0;
+        FAIL = 1;
+        RETRY = 2;
+    }
+    Statuses Status = 3;
+    fixed64 SecretHash = 4;
+    bytes ServerDHPubKey = 5;
+}
