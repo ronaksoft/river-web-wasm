@@ -1,118 +1,191 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"encoding/base64"
-	river_conn "git.ronaksoft.com/river/web-wasm/connection"
+	"fmt"
 	"git.ronaksoft.com/river/web-wasm/msg"
-	"git.ronaksoft.com/river/web-wasm/utils"
-	"github.com/monnand/dhkx"
-	"math/big"
+	"git.ronaksoft.com/river/web-wasm/river"
+	"math/rand"
 	"syscall/js"
+	"time"
 )
 
 var (
-	SK river_conn.ServerKeys
+	_river *river.River
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+	_river = new(river.River)
+
 	done := make(chan struct{}, 0)
+
 	global := js.Global()
+	global.Set("wasmLoad", js.FuncOf(load))
+	global.Set("wasmInit", js.FuncOf(authStep1))
 	global.Set("wasmAuthStep1", js.FuncOf(authStep1))
 	global.Set("wasmAuthStep2", js.FuncOf(authStep2))
+	global.Set("wasmAuthStep3", js.FuncOf(authStep3))
+	global.Set("wasmDecode", js.FuncOf(decode))
+	global.Set("wasmEncode", js.FuncOf(encode))
+	global.Set("wasmGenSrpHash", js.FuncOf(generateSrpHash))
+	global.Set("wasmGenInputPassword", js.FuncOf(generateInputPassword))
 	<-done
+
+	fmt.Println("Bye Wasm !")
+}
+
+func load(this js.Value, args []js.Value) interface{} {
+	connInfo := args[0].String()
+	serverPubKeys := args[1].String()
+	err := _river.Load(connInfo, serverPubKeys)
+	if err != nil {
+		return err.Error()
+	}
+
+	return nil
 }
 
 func authStep1(this js.Value, args []js.Value) interface{} {
-	req := msg.InitConnect{
-		ClientNonce: utils.RandomUint64(),
-	}
-	bytes, _ := req.Marshal()
-	return bytes
+	go func() {
+		bytes := _river.AuthStep1(dispatchProgress)
+		js.Global().Call("jsAuthStep1", base64.StdEncoding.EncodeToString(bytes))
+	}()
+	return nil
 }
 
 func authStep2(this js.Value, args []js.Value) interface{} {
-	enc, err := base64.StdEncoding.DecodeString(args[0].String())
-	if err != nil {
-		return err.Error()
-	}
+	go func(inps []js.Value) {
+		enc, err := base64.StdEncoding.DecodeString(args[0].String())
+		if err != nil {
+			return
+		}
 
-	x := msg.InitResponse{}
-	err = x.Unmarshal(enc)
-	if err != nil {
-		return err.Error()
-	}
+		bytes, err := _river.AuthStep2(enc, dispatchProgress)
+		if err != nil {
+			return
+		}
 
-	req := msg.InitCompleteAuth{
-		ClientNonce:      x.ClientNonce,
-		ServerNonce:      x.ServerNonce,
-		ClientDHPubKey:   nil,
-		P:                0,
-		Q:                0,
-		EncryptedPayload: nil,
-	}
+		js.Global().Call("jsAuthStep2", base64.StdEncoding.EncodeToString(bytes))
+	}(args)
 
-	// Generate DH Pub Key
-	dhGroup, err := SK.GetDhGroup(int64(x.DHGroupFingerPrint))
-	if err != nil {
-		return err.Error()
-	}
+	return nil
+}
 
-	dhPrime := big.NewInt(0)
-	dhPrime.SetString(dhGroup.Prime, 16)
+func authStep3(this js.Value, args []js.Value) interface{} {
+	go func(inps []js.Value) {
+		enc, err := base64.StdEncoding.DecodeString(inps[0].String())
+		if err != nil {
+			return
+		}
 
-	// 30
+		bytes, err := _river.AuthStep3(enc, dispatchProgress)
+		if err != nil {
+			return
+		}
 
-	dh := dhkx.CreateGroup(dhPrime, big.NewInt(int64(dhGroup.Gen)))
-	clientDhKey, err := dh.GeneratePrivateKey(rand.Reader)
-	if err != nil {
-		return err.Error()
-	}
+		js.Global().Call("jsAuthStep3", base64.StdEncoding.EncodeToString(bytes))
+	}(args)
 
-	req.ClientDHPubKey = clientDhKey.Bytes()
+	return nil
+}
 
-	// 45
-	p, q := utils.SplitPQ(big.NewInt(int64(x.PQ)))
-	if p.Cmp(q) < 0 {
-		req.P = p.Uint64()
-		req.Q = q.Uint64()
-	} else {
-		req.P = q.Uint64()
-		req.Q = p.Uint64()
-	}
+func decode(this js.Value, args []js.Value) interface{} {
+	go func(inps []js.Value) {
+		enc, err := base64.StdEncoding.DecodeString(inps[0].String())
+		if err == nil {
+			return
+		}
 
-	// 55
-	q2Internal := msg.InitCompleteAuthInternal{}
-	q2Internal.SecretNonce = []byte(utils.RandomID(16))
+		env, err := _river.Decode(enc)
+		if err == nil || env == nil {
+			return
+		}
 
-	// 60
-	serverPubKey, err := SK.GetPublicKey(int64(x.RSAPubKeyFingerPrint))
-	if err != nil {
-		return err.Error()
-	}
+		js.Global().Call("jsDecode", env.RequestID, env.Constructor, base64.StdEncoding.EncodeToString(env.Message))
+	}(args)
 
-	n := big.NewInt(0)
-	n.SetString(serverPubKey.N, 10)
-	rsaPublicKey := rsa.PublicKey{
-		N: n,
-		E: int(serverPubKey.E),
-	}
+	return nil
+}
 
-	// 65
-	decrypted, err := q2Internal.Marshal()
-	if err != nil {
-		return err.Error()
-	}
+func encode(this js.Value, args []js.Value) interface{} {
+	go func(inps []js.Value) {
+		env := new(msg.MessageEnvelope)
 
-	encrypted, err := rsa.EncryptPKCS1v15(rand.Reader, &rsaPublicKey, decrypted)
-	if err != nil {
-		return err.Error()
-	}
+		env.RequestID = uint64(args[0].Int())
+		env.Constructor = int64(args[1].Int())
+		enc, err := base64.StdEncoding.DecodeString(args[2].String())
+		if err != nil {
+			return
+		}
+		env.Message = enc
 
-	// 70
-	req.EncryptedPayload = encrypted
+		if len(args) > 4 {
+			teamId := args[3].String()
+			teamAccessHash := args[4].String()
+			if teamId != "0" && teamAccessHash != "0" {
+				env.Header = river.TeamHeader(teamId, teamAccessHash)
+			}
+		}
 
-	bytes, _ := req.Marshal()
-	return bytes
+		bytes, err := _river.Encode(env)
+		if err == nil {
+			return
+		}
+
+		js.Global().Call("jsEncode", env.RequestID, base64.StdEncoding.EncodeToString(bytes))
+	}(args)
+
+	return nil
+}
+
+func generateSrpHash(this js.Value, inps []js.Value) interface{} {
+	go func(args []js.Value) {
+		id := args[0].Int()
+		pass, err := base64.StdEncoding.DecodeString(args[1].String())
+		if err != nil {
+			return
+		}
+
+		algorithm := args[2].Int()
+		algorithmData, err := base64.StdEncoding.DecodeString(args[3].String())
+		if err != nil {
+			return
+		}
+
+		res, err := _river.GenSrpHash(pass, int64(algorithm), algorithmData)
+		if err != nil {
+			return
+		}
+
+		js.Global().Call("jsGenSrpHash", id, base64.StdEncoding.EncodeToString(res))
+	}(inps)
+	return nil
+}
+
+func generateInputPassword(this js.Value, inps []js.Value) interface{} {
+	go func(args []js.Value) {
+		id := args[0].Int()
+		pass, err := base64.StdEncoding.DecodeString(args[1].String())
+		if err != nil {
+			return
+		}
+
+		accountPass, err := base64.StdEncoding.DecodeString(args[2].String())
+		if err != nil {
+			return
+		}
+
+		res, err := _river.GenInputPassword(pass, accountPass)
+		if err != nil {
+			return
+		}
+
+		js.Global().Call("jsGenInputPassword", id, base64.StdEncoding.EncodeToString(res))
+	}(inps)
+	return nil
+}
+
+func dispatchProgress(progress int64) {
+	js.Global().Call("jsAuthProgress", progress)
 }

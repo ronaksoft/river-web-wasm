@@ -1,0 +1,12 @@
+# OS X
+.DS_STORE
+
+# JetBrains
+.idea
+
+dump.rdb
+
+*.wasm
+go.wasm
+test.wasm
+river.wasm

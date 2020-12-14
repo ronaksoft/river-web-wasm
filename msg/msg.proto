@@ -1,15 +1,33 @@
 syntax = "proto3";
 package msg;
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "rony.proto";
+
+// import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option go_package = '.;msg';
 
-option (gogoproto.goproto_enum_prefix_all) = false;
-option (gogoproto.goproto_getters_all) = false;
-option (gogoproto.goproto_stringer_all) = false;
-option (gogoproto.goproto_enum_stringer_all) = false;
-option (gogoproto.messagename_all) = false;
+// option (gogoproto.goproto_enum_prefix_all) = false;
+// option (gogoproto.goproto_getters_all) = false;
+// option (gogoproto.goproto_stringer_all) = false;
+// option (gogoproto.goproto_enum_stringer_all) = false;
+// option (gogoproto.messagename_all) = false;
+
+// ProtoMessage
+// If AuthID == 0 then Payload is a MessageEnvelop otherwise Payload is a ProtoEncryptedPayload
+message ProtoMessage {
+    int64 AuthID = 1;
+    bytes MessageKey = 2; // 32 bytes
+    bytes Payload = 3;
+}
+
+// ProtoMessageEncryptedPayload
+message ProtoEncryptedPayload {
+    int64 ServerSalt = 1;
+    uint64 MessageID = 2;
+    int64 SessionID = 3;
+    rony.MessageEnvelope Envelope = 4;
+}
 
 // InitConnect
 // @Function
@@ -57,4 +75,38 @@ message InitAuthCompleted {
     Statuses Status = 3;
     fixed64 SecretHash = 4;
     bytes ServerDHPubKey = 5;
+}
+
+// PasswordAlgorithmVer6A
+message PasswordAlgorithmVer6A {
+    bytes Salt1 = 1;
+    bytes Salt2 = 2;
+    int32 G = 3;
+    bytes P = 4;
+}
+
+// AccountPassword
+// Configuration for two-factor authorization
+message AccountPassword {
+    bool HasPassword = 1;
+    string Hint = 2;
+    int64 Algorithm = 3;
+    bytes AlgorithmData = 4;
+    bytes SrpB = 5;
+    bytes RandomData = 6;
+    int64 SrpID = 7 [jstype = JS_STRING];
+    repeated RecoveryQuestion Questions = 8;
+}
+
+// InputPassword
+message InputPassword {
+    int64 SrpID = 1 [jstype = JS_STRING];
+    bytes A = 2;
+    bytes M1 = 3;
+}
+
+// RecoverQuestion
+message RecoveryQuestion {
+    int32 ID = 1;
+    string Text = 2;
 }
