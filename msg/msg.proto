@@ -110,3 +110,121 @@ message RecoveryQuestion {
     int32 ID = 1;
     string Text = 2;
 }
+
+// UpdateContainer
+// It is very similar to MessageContainer but holding a list of Updates
+message UpdateContainer {
+    int32 Length = 1;
+    repeated UpdateEnvelope Updates = 2;
+    int64 MinUpdateID = 3;
+    int64 MaxUpdateID = 4;
+    repeated User Users = 5;
+    repeated Group Groups = 6;
+}
+
+// UpdateEnvelope
+message UpdateEnvelope {
+    int64 Constructor = 1;
+    bytes Update = 2;
+    int32 UCount = 3;
+    int64 UpdateID = 4;
+    int64 Timestamp = 5;
+}
+
+// User
+message User {
+    int64 ID = 1 [jstype = JS_STRING];
+    string FirstName = 2;
+    string LastName = 3;
+    string Username = 4;
+    UserStatus Status = 5;
+    bool Restricted = 6;
+    fixed64 AccessHash = 7 [jstype = JS_STRING];
+    UserPhoto Photo = 8;
+    string Bio = 9;
+    string Phone = 10;
+    int64 LastSeen = 11;
+    repeated UserPhoto PhotoGallery = 12;
+    bool IsBot = 13;
+    bool Deleted = 14;
+    bool Blocked = 15;
+    BotInfo BotInfo = 16;
+    bool Official = 17;
+}
+
+// UserStatus
+enum UserStatus {
+    UserStatusOffline = 0;
+    UserStatusOnline = 1;
+    UserStatusRecently = 2;
+    UserStatusLastWeek = 3;
+    UserStatusLastMonth = 4;
+}
+
+// UserPhoto
+message UserPhoto {
+    FileLocation PhotoBig = 1;
+    FileLocation PhotoSmall = 2;
+    int64 PhotoID = 3 [jstype = JS_STRING];
+}
+
+// FileLocation
+message FileLocation {
+    int32 ClusterID = 1;
+    int64 FileID = 2 [jstype = JS_STRING];
+    fixed64 AccessHash = 3 [jstype = JS_STRING];
+}
+
+// BotInfo
+message BotInfo {
+    Bot Bot = 1;
+    int64 UserID = 2;
+    string Description = 3;
+    repeated BotCommands BotCommands = 4;
+    bool InlineGeo = 5;
+    string InlinePlaceHolder = 6;
+    bool InlineQuery = 7;
+}
+
+// Bot
+message Bot {
+    int64 ID = 1 [jstype = JS_STRING];
+    string Name = 2;
+    string Username = 3;
+    string Bio = 4;
+}
+
+// BotCommands
+message BotCommands {
+    string Command = 1;
+    string Description = 2;
+}
+
+// GroupPhoto
+message GroupPhoto {
+    FileLocation PhotoBig = 1;
+    FileLocation PhotoSmall = 2;
+    int64 PhotoID = 3 [jstype = JS_STRING];
+}
+
+// Group
+message Group {
+    int64 TeamID = 100 [jstype = JS_STRING];
+    int64 ID = 1 [jstype = JS_STRING];
+    string Title = 2;
+    int64 CreatedOn = 3;
+    int32 Participants = 4;
+    int64 EditedOn = 5;
+    repeated GroupFlags Flags = 6;
+    GroupPhoto Photo = 7;
+}
+
+// GroupFlags
+enum GroupFlags {
+    GroupFlagsEmpty = 0;
+    GroupFlagsCreator = 1;
+    GroupFlagsNonParticipant = 2;
+    GroupFlagsAdmin = 3;
+    GroupFlagsAdminsEnabled = 4;
+    GroupFlagsDeactivated = 5;
+}

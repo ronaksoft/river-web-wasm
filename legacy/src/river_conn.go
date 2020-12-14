@@ -1,8 +1,7 @@
-package river_conn
+package main
 
 import (
 	"fmt"
-	_errors "git.ronaksoft.com/river/web-wasm/errors"
 	"strconv"
 	"syscall/js"
 	"time"
@@ -25,30 +24,30 @@ type dHGroup struct {
 }
 
 // easyjson:json
-// ServerKeys
-type ServerKeys struct {
+// serverKeys
+type serverKeys struct {
 	PublicKeys []publicKey
 	DHGroups   []dHGroup
 }
 
 // getPublicKey
-func (v *ServerKeys) GetPublicKey(keyFP int64) (publicKey, error) {
+func (v *serverKeys) getPublicKey(keyFP int64) (publicKey, error) {
 	for _, pk := range v.PublicKeys {
 		if pk.FingerPrint == keyFP {
 			return pk, nil
 		}
 	}
-	return publicKey{}, _errors.ErrNotFound
+	return publicKey{}, ErrNotFound
 }
 
 // getDhGroup
-func (v *ServerKeys) GetDhGroup(keyFP int64) (dHGroup, error) {
+func (v *serverKeys) getDhGroup(keyFP int64) (dHGroup, error) {
 	for _, dh := range v.DHGroups {
 		if dh.FingerPrint == keyFP {
 			return dh, nil
 		}
 	}
-	return dHGroup{}, _errors.ErrNotFound
+	return dHGroup{}, ErrNotFound
 }
 
 // easyjson:json
@@ -77,15 +76,13 @@ type RiverConnectionJS struct {
 }
 
 // NewRiverConnection
-func NewRiverConnection(connInfo string) (rc *RiverConnection, err error) {
-	rc = new(RiverConnection)
-	err = rc.Load(connInfo)
-	if err != nil {
-		return
+func NewRiverConnection(connInfo string) *RiverConnection {
+	rc := new(RiverConnection)
+	if err := rc.Load(connInfo); err != nil {
+		rc.Save()
 	}
-
 	rc.DiffTime = 0
-	return
+	return rc
 }
 
 // Save
@@ -103,8 +100,7 @@ func (v *RiverConnection) Save() {
 	if bytes, err := vv.MarshalJSON(); err != nil {
 		fmt.Println(err.Error(), "RiverConnection::Save")
 	} else {
-		//fmt.Println(bytes)
-		js.Global().Call("jsSave", string(bytes))
+		js.Global().Call("saveConnInfo", string(bytes))
 	}
 }
 
@@ -115,7 +111,6 @@ func (v *RiverConnection) Load(connInfo string) error {
 		fmt.Println(err.Error(), "RiverConnection::Load")
 		return err
 	}
-
 	v.AuthKey = vv.AuthKey
 	v.AuthID, _ = strconv.ParseInt(vv.AuthID, 10, 64)
 	v.FirstName = vv.FirstName
