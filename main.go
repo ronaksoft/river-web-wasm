@@ -104,9 +104,14 @@ func decode(this js.Value, args []js.Value) interface{} {
 			return
 		}
 
+		reqId := inps[2].Int()
+
 		if withParse {
 			parseEnvelope(env)
 		} else {
+			if reqId != 0 {
+				env.RequestID = uint64(reqId)
+			}
 			js.Global().Call("jsDecode", false, env.RequestID, env.Constructor, base64.StdEncoding.EncodeToString(env.Message))
 		}
 	}(args)

@@ -26,14 +26,14 @@ type River struct {
 }
 
 func (r *River) Load(connInfo, serverKeys string) (err error) {
-	r.ConnInfo, err = river_conn.NewRiverConnection(connInfo)
+	err = r.serverKeys.UnmarshalJSON([]byte(serverKeys))
 	if err != nil {
 		return
 	}
 
-	err = r.serverKeys.UnmarshalJSON([]byte(serverKeys))
+	r.ConnInfo, err = river_conn.NewRiverConnection(connInfo)
 	if err != nil {
-		return
+		return _errors.ErrNoAuthKey
 	}
 
 	if r.ConnInfo.AuthID == 0 {
