@@ -22,7 +22,7 @@ func main() {
 
 	global := js.Global()
 	global.Set("wasmLoad", js.FuncOf(load))
-	global.Set("wasmInit", js.FuncOf(authStep1))
+	global.Set("wasmSetServerTime", js.FuncOf(setServerTime))
 	global.Set("wasmAuthStep1", js.FuncOf(authStep1))
 	global.Set("wasmAuthStep2", js.FuncOf(authStep2))
 	global.Set("wasmAuthStep3", js.FuncOf(authStep3))
@@ -43,6 +43,12 @@ func load(this js.Value, args []js.Value) interface{} {
 		return err.Error()
 	}
 
+	return nil
+}
+
+func setServerTime(this js.Value, args []js.Value) interface{} {
+	serverTime := args[0].Int()
+	_river.ConnInfo.SetServerTime(int64(serverTime))
 	return nil
 }
 
