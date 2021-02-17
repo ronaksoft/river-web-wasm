@@ -1,10 +1,8 @@
 package river_conn
 
 import (
-	"fmt"
 	_errors "git.ronaksoft.com/river/web-wasm/errors"
 	"strconv"
-	"syscall/js"
 	"time"
 )
 
@@ -90,31 +88,31 @@ func NewRiverConnection(connInfo string) (rc *RiverConnection, err error) {
 
 // Save
 func (v *RiverConnection) Save() {
-	var vv = RiverConnectionJS{
-		AuthKey:   v.AuthKey,
-		AuthID:    strconv.FormatInt(v.AuthID, 10),
-		Username:  v.Username,
-		FirstName: v.FirstName,
-		LastName:  v.LastName,
-		Phone:     v.Phone,
-		UserID:    strconv.FormatInt(v.UserID, 10),
-	}
+	//var vv = RiverConnectionJS{
+	//	AuthKey:   v.AuthKey,
+	//	AuthID:    strconv.FormatInt(v.AuthID, 10),
+	//	Username:  v.Username,
+	//	FirstName: v.FirstName,
+	//	LastName:  v.LastName,
+	//	Phone:     v.Phone,
+	//	UserID:    strconv.FormatInt(v.UserID, 10),
+	//}
 
-	if bytes, err := vv.MarshalJSON(); err != nil {
-		fmt.Println(err.Error(), "RiverConnection::Save")
-	} else {
-		//fmt.Println(bytes)
-		js.Global().Call("jsSave", string(bytes))
-	}
+	//if bytes, err := vv.MarshalJSON(); err != nil {
+	//	fmt.Println(err.Error(), "RiverConnection::Save")
+	//} else {
+	//	//fmt.Println(bytes)
+	//	js.Global().Call("jsSave", string(bytes))
+	//}
 }
 
 // Load
 func (v *RiverConnection) Load(connInfo string) error {
 	var vv = RiverConnectionJS{}
-	if err := vv.UnmarshalJSON([]byte(connInfo)); err != nil {
-		fmt.Println(err.Error(), "RiverConnection::Load")
-		return err
-	}
+	//if err := vv.UnmarshalJSON([]byte(connInfo)); err != nil {
+	//	fmt.Println(err.Error(), "RiverConnection::Load")
+	//	return err
+	//}
 
 	v.AuthKey = vv.AuthKey
 	v.AuthID, _ = strconv.ParseInt(vv.AuthID, 10, 64)

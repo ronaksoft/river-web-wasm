@@ -26,10 +26,10 @@ type River struct {
 }
 
 func (r *River) Load(connInfo, serverKeys string) (err error) {
-	err = r.serverKeys.UnmarshalJSON([]byte(serverKeys))
-	if err != nil {
-		return
-	}
+	//err = r.serverKeys.UnmarshalJSON([]byte(serverKeys))
+	//if err != nil {
+	//	return
+	//}
 
 	r.ConnInfo, err = river_conn.NewRiverConnection(connInfo)
 	if err != nil {
