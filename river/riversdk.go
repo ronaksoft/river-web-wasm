@@ -3,6 +3,7 @@ package river
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"encoding/binary"
 	river_conn "git.ronaksoft.com/river/web-wasm/connection"
 	_errors "git.ronaksoft.com/river/web-wasm/errors"
@@ -26,10 +27,15 @@ type River struct {
 }
 
 func (r *River) Load(connInfo, serverKeys string) (err error) {
-	//err = r.serverKeys.UnmarshalJSON([]byte(serverKeys))
-	//if err != nil {
-	//	return
-	//}
+	serverKeysByte, err := base64.StdEncoding.DecodeString(serverKeys)
+	if err != nil {
+		return
+	}
+
+	err = r.serverKeys.Unmarshal(serverKeysByte)
+	if err != nil {
+		return
+	}
 
 	r.ConnInfo, err = river_conn.NewRiverConnection(connInfo)
 	if err != nil {

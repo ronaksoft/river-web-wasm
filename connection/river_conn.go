@@ -1,77 +1,40 @@
 package river_conn
 
 import (
+	"encoding/base64"
+	"fmt"
 	_errors "git.ronaksoft.com/river/web-wasm/errors"
-	"strconv"
+	"git.ronaksoft.com/river/web-wasm/msg"
+	"syscall/js"
 	"time"
 )
 
-// easyjson:json
-// publicKey
-type publicKey struct {
-	N           string
-	FingerPrint int64
-	E           uint32
-}
-
-// easyjson:json
-// dHGroup
-type dHGroup struct {
-	Prime       string
-	Gen         int32
-	FingerPrint int64
-}
-
-// easyjson:json
-// ServerKeys
 type ServerKeys struct {
-	PublicKeys []publicKey
-	DHGroups   []dHGroup
+	msg.ServerKeys
 }
 
 // getPublicKey
-func (v *ServerKeys) GetPublicKey(keyFP int64) (publicKey, error) {
+func (v *ServerKeys) GetPublicKey(keyFP int64) (*msg.PublicKey, error) {
 	for _, pk := range v.PublicKeys {
 		if pk.FingerPrint == keyFP {
 			return pk, nil
 		}
 	}
-	return publicKey{}, _errors.ErrNotFound
+	return nil, _errors.ErrNotFound
 }
 
 // getDhGroup
-func (v *ServerKeys) GetDhGroup(keyFP int64) (dHGroup, error) {
+func (v *ServerKeys) GetDhGroup(keyFP int64) (*msg.DHGroup, error) {
 	for _, dh := range v.DHGroups {
 		if dh.FingerPrint == keyFP {
 			return dh, nil
 		}
 	}
-	return dHGroup{}, _errors.ErrNotFound
+	return nil, _errors.ErrNotFound
 }
 
-// easyjson:json
-// RiverConnection
 type RiverConnection struct {
-	AuthID    int64
-	AuthKey   [256]byte
-	UserID    int64
-	Username  string
-	Phone     string
-	FirstName string
-	LastName  string
-	DiffTime  int64
-}
-
-// easyjson:json
-// RiverConnection
-type RiverConnectionJS struct {
-	AuthID    string
-	AuthKey   [256]byte
-	UserID    string
-	Username  string
-	Phone     string
-	FirstName string
-	LastName  string
+	msg.RiverConnection
 }
 
 // NewRiverConnection
@@ -88,39 +51,24 @@ func NewRiverConnection(connInfo string) (rc *RiverConnection, err error) {
 
 // Save
 func (v *RiverConnection) Save() {
-	//var vv = RiverConnectionJS{
-	//	AuthKey:   v.AuthKey,
-	//	AuthID:    strconv.FormatInt(v.AuthID, 10),
-	//	Username:  v.Username,
-	//	FirstName: v.FirstName,
-	//	LastName:  v.LastName,
-	//	Phone:     v.Phone,
-	//	UserID:    strconv.FormatInt(v.UserID, 10),
-	//}
-
-	//if bytes, err := vv.MarshalJSON(); err != nil {
-	//	fmt.Println(err.Error(), "RiverConnection::Save")
-	//} else {
-	//	//fmt.Println(bytes)
-	//	js.Global().Call("jsSave", string(bytes))
-	//}
+	if bytes, err := v.Marshal(); err != nil {
+		fmt.Println(err.Error(), "RiverConnection::Save")
+	} else {
+		//fmt.Println(bytes)
+		js.Global().Call("jsSave", base64.StdEncoding.EncodeToString(bytes))
+	}
 }
 
 // Load
 func (v *RiverConnection) Load(connInfo string) error {
-	var vv = RiverConnectionJS{}
-	//if err := vv.UnmarshalJSON([]byte(connInfo)); err != nil {
-	//	fmt.Println(err.Error(), "RiverConnection::Load")
-	//	return err
-	//}
-
-	v.AuthKey = vv.AuthKey
-	v.AuthID, _ = strconv.ParseInt(vv.AuthID, 10, 64)
-	v.FirstName = vv.FirstName
-	v.LastName = vv.LastName
-	v.Phone = vv.Phone
-	v.Username = vv.Username
-	v.UserID, _ = strconv.ParseInt(vv.UserID, 10, 64)
+	connInfoByte, err := base64.StdEncoding.DecodeString(connInfo)
+	if err != nil {
+		return err
+	}
+	if err := v.Unmarshal(connInfoByte); err != nil {
+		fmt.Println(err.Error(), "RiverConnection::Load")
+		return err
+	}
 	return nil
 }
 
