@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/binary"
+	"fmt"
 	river_conn "git.ronaksoft.com/river/web-wasm/connection"
 	_errors "git.ronaksoft.com/river/web-wasm/errors"
 	"git.ronaksoft.com/river/web-wasm/msg"
@@ -210,7 +211,7 @@ func (r *River) AuthStep3(in []byte, cb Callback) (bytes []byte, err error) {
 		}
 
 		if x.SecretHash != binary.LittleEndian.Uint64(secretHash[24:32]) {
-			//fmt.Println(x.SecretHash, binary.LittleEndian.Uint64(secretHash[24:32]))
+			fmt.Println(x.SecretHash, binary.LittleEndian.Uint64(secretHash[24:32]))
 			err = _errors.ErrSecretNonceMismatch
 			return
 		}

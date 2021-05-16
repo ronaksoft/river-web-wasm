@@ -47,15 +47,15 @@ func load(this js.Value, args []js.Value) interface{} {
 }
 
 func setServerTime(this js.Value, args []js.Value) interface{} {
-	serverTime := args[0].Int()
-	_river.ConnInfo.SetServerTime(int64(serverTime))
+	serverTime := int64(args[0].Float())
+	_river.ConnInfo.SetServerTime(serverTime)
 	return nil
 }
 
 func auth(this js.Value, args []js.Value) interface{} {
 	go func(inps []js.Value) {
-		id := inps[0].Int()
-		step := inps[1].Int()
+		id := int64(inps[0].Float())
+		step := int64(inps[1].Float())
 		var (
 			bytes []byte
 			err   error
@@ -82,9 +82,11 @@ func auth(this js.Value, args []js.Value) interface{} {
 
 			bytes, err = _river.AuthStep3(enc, dispatchProgress)
 			if err != nil {
+				fmt.Println(err)
 				return
 			}
 		}
+
 		js.Global().Call("jsAuth", id, step, base64.StdEncoding.EncodeToString(bytes))
 	}(args)
 	return nil
@@ -104,7 +106,7 @@ func decode(this js.Value, args []js.Value) interface{} {
 			return
 		}
 
-		reqId := inps[2].Int()
+		reqId := int64(inps[2].Float())
 
 		if withParse {
 			parseEnvelope(env)
@@ -125,8 +127,8 @@ func encode(this js.Value, args []js.Value) interface{} {
 
 		env := new(msg.MessageEnvelope)
 
-		env.RequestID = uint64(args[1].Int())
-		env.Constructor = int64(args[2].Int())
+		env.RequestID = uint64(args[1].Float())
+		env.Constructor = int64(args[2].Float())
 		enc, err := base64.StdEncoding.DecodeString(args[3].String())
 		if err != nil {
 			return
@@ -154,13 +156,13 @@ func encode(this js.Value, args []js.Value) interface{} {
 
 func generateSrpHash(this js.Value, args []js.Value) interface{} {
 	go func(inps []js.Value) {
-		id := inps[0].Int()
+		id := int64(inps[0].Float())
 		pass, err := base64.StdEncoding.DecodeString(inps[1].String())
 		if err != nil {
 			return
 		}
 
-		algorithm := inps[2].Int()
+		algorithm := int64(inps[2].Float())
 		algorithmData, err := base64.StdEncoding.DecodeString(inps[3].String())
 		if err != nil {
 			return
@@ -178,7 +180,7 @@ func generateSrpHash(this js.Value, args []js.Value) interface{} {
 
 func generateInputPassword(this js.Value, inps []js.Value) interface{} {
 	go func(inps []js.Value) {
-		id := inps[0].Int()
+		id := int64(inps[0].Float())
 		pass, err := base64.StdEncoding.DecodeString(inps[1].String())
 		if err != nil {
 			return
