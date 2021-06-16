@@ -2,7 +2,6 @@ package river_conn
 
 import (
 	"encoding/base64"
-	"fmt"
 	_errors "git.ronaksoft.com/river/web-wasm/errors"
 	"git.ronaksoft.com/river/web-wasm/msg"
 	"syscall/js"
@@ -52,7 +51,7 @@ func NewRiverConnection(connInfo string) (rc *RiverConnection, err error) {
 // Save
 func (v *RiverConnection) Save() {
 	if bytes, err := v.Marshal(); err != nil {
-		fmt.Println(err.Error(), "RiverConnection::Save")
+		//fmt.Println(err.Error(), "RiverConnection::Save")
 	} else {
 		//fmt.Println(bytes)
 		js.Global().Call("jsSave", base64.StdEncoding.EncodeToString(bytes))
@@ -66,7 +65,7 @@ func (v *RiverConnection) Load(connInfo string) error {
 		return err
 	}
 	if err := v.Unmarshal(connInfoByte); err != nil {
-		fmt.Println(err.Error(), "RiverConnection::Load")
+		//fmt.Println(err.Error(), "RiverConnection::Load")
 		return err
 	}
 	return nil

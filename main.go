@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/base64"
-	"fmt"
 	"git.ronaksoft.com/river/web-wasm/msg"
 	"git.ronaksoft.com/river/web-wasm/river"
 	"math/rand"
@@ -32,7 +31,7 @@ func main() {
 	js.Global().Call("jsLoaded", nil)
 	<-done
 
-	fmt.Println("Bye Wasm !")
+	//fmt.Println("Bye Wasm !")
 }
 
 func load(this js.Value, args []js.Value) interface{} {
@@ -82,7 +81,7 @@ func auth(this js.Value, args []js.Value) interface{} {
 
 			bytes, err = _river.AuthStep3(enc, dispatchProgress)
 			if err != nil {
-				fmt.Println(err)
+				//fmt.Println(err)
 				return
 			}
 		}
@@ -211,7 +210,7 @@ func parseEnvelope(m *msg.MessageEnvelope) {
 		x := new(msg.MessageContainer)
 		err := x.Unmarshal(m.Message)
 		if err != nil {
-			fmt.Println("Error", err.Error())
+			//fmt.Println("Error", err.Error())
 			return
 		}
 
@@ -222,7 +221,7 @@ func parseEnvelope(m *msg.MessageEnvelope) {
 		x := new(msg.UpdateContainer)
 		err := x.Unmarshal(m.Message)
 		if err != nil {
-			fmt.Println("Error", err.Error())
+			//fmt.Println("Error", err.Error())
 			return
 		}
 

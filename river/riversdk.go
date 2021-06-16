@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	river_conn "git.ronaksoft.com/river/web-wasm/connection"
 	_errors "git.ronaksoft.com/river/web-wasm/errors"
 	"git.ronaksoft.com/river/web-wasm/msg"
@@ -43,21 +42,12 @@ func (r *River) Load(connInfo, serverKeys string) (err error) {
 		return _errors.ErrNoAuthKey
 	}
 
-	fmt.Println(fmt.Sprintf("%+v %+v", r.serverKeys, r.ConnInfo))
-
-	for _, d := range r.serverKeys.PublicKeys {
-		fmt.Println(fmt.Sprintf("%+v", d))
-	}
-	for _, d := range r.serverKeys.DHGroups {
-		fmt.Println(fmt.Sprintf("%+v", d))
-	}
-
 	if r.ConnInfo.AuthID == 0 {
 		return _errors.ErrNoAuthKey
 	}
 
 	r.authID = r.ConnInfo.AuthID
-	r.authKey = r.ConnInfo.AuthKey[:]
+	r.authKey = r.ConnInfo.AuthKey
 	return
 }
 
@@ -198,8 +188,9 @@ func (r *River) AuthStep3(in []byte, cb Callback) (bytes []byte, err error) {
 		cb(70)
 		/* End progress */
 
-		copy(r.ConnInfo.AuthKey[:], serverDhKey.Bytes())
-		authKeyHash, err = utils.Sha256(r.ConnInfo.AuthKey[:])
+		//copy(r.ConnInfo.AuthKey, serverDhKey.Bytes())
+		r.ConnInfo.AuthKey = serverDhKey.Bytes()
+		authKeyHash, err = utils.Sha256(r.ConnInfo.AuthKey)
 		if err != nil {
 			return
 		}
@@ -220,7 +211,7 @@ func (r *River) AuthStep3(in []byte, cb Callback) (bytes []byte, err error) {
 		}
 
 		if x.SecretHash != binary.LittleEndian.Uint64(secretHash[24:32]) {
-			fmt.Println(x.SecretHash, binary.LittleEndian.Uint64(secretHash[24:32]))
+			//fmt.Println(x.SecretHash, binary.LittleEndian.Uint64(secretHash[24:32]))
 			err = _errors.ErrSecretNonceMismatch
 			return
 		}
@@ -230,7 +221,7 @@ func (r *River) AuthStep3(in []byte, cb Callback) (bytes []byte, err error) {
 		/* End progress */
 
 		r.ConnInfo.Save()
-		r.authKey = r.ConnInfo.AuthKey[:]
+		r.authKey = r.ConnInfo.AuthKey
 		r.authID = r.ConnInfo.AuthID
 
 		/* Start Progress */
