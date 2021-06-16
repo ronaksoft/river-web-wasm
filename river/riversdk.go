@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/binary"
+	"fmt"
 	river_conn "git.ronaksoft.com/river/web-wasm/connection"
 	_errors "git.ronaksoft.com/river/web-wasm/errors"
 	"git.ronaksoft.com/river/web-wasm/msg"
@@ -38,6 +39,15 @@ func (r *River) Load(connInfo, serverKeys string) (err error) {
 
 	if r.ConnInfo.AuthID == 0 {
 		return _errors.ErrNoAuthKey
+	}
+
+	fmt.Println(fmt.Sprintf("%+v %+v", r.serverKeys, r.ConnInfo))
+
+	for _, d := range r.serverKeys.PublicKeys {
+		fmt.Println(fmt.Sprintf("%+v", d))
+	}
+	for _, d := range r.serverKeys.DHGroups {
+		fmt.Println(fmt.Sprintf("%+v", d))
 	}
 
 	r.authID = r.ConnInfo.AuthID
