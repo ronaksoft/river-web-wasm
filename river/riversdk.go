@@ -43,6 +43,15 @@ func (r *River) Load(connInfo, serverKeys string) (err error) {
 		return _errors.ErrNoAuthKey
 	}
 
+	fmt.Println(fmt.Sprintf("%+v %+v", r.serverKeys, r.ConnInfo))
+
+	for _, d := range r.serverKeys.PublicKeys {
+		fmt.Println(fmt.Sprintf("%+v", d))
+	}
+	for _, d := range r.serverKeys.DHGroups {
+		fmt.Println(fmt.Sprintf("%+v", d))
+	}
+
 	if r.ConnInfo.AuthID == 0 {
 		return _errors.ErrNoAuthKey
 	}
