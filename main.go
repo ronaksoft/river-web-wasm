@@ -64,7 +64,7 @@ func auth(this js.Value, args []js.Value) interface{} {
 		case 1:
 			bytes = _river.AuthStep1(dispatchProgress)
 		case 2:
-			enc, err = base64.StdEncoding.DecodeString(args[2].String())
+			enc, err = base64.StdEncoding.DecodeString(inps[2].String())
 			if err != nil {
 				return
 			}
@@ -74,7 +74,7 @@ func auth(this js.Value, args []js.Value) interface{} {
 				return
 			}
 		case 3:
-			enc, err = base64.StdEncoding.DecodeString(args[2].String())
+			enc, err = base64.StdEncoding.DecodeString(inps[2].String())
 			if err != nil {
 				return
 			}
@@ -126,17 +126,17 @@ func encode(this js.Value, args []js.Value) interface{} {
 
 		env := new(msg.MessageEnvelope)
 
-		env.RequestID = uint64(args[1].Float())
-		env.Constructor = int64(args[2].Float())
-		enc, err := base64.StdEncoding.DecodeString(args[3].String())
+		env.RequestID = uint64(inps[1].Float())
+		env.Constructor = int64(inps[2].Float())
+		enc, err := base64.StdEncoding.DecodeString(inps[3].String())
 		if err != nil {
 			return
 		}
 		env.Message = enc
 
-		if len(args) > 4 {
-			teamId := args[4].String()
-			teamAccessHash := args[5].String()
+		if len(inps) > 4 {
+			teamId := inps[4].String()
+			teamAccessHash := inps[5].String()
 			if teamId != "0" && teamAccessHash != "0" {
 				env.Header = river.TeamHeader(teamId, teamAccessHash)
 			}
@@ -177,7 +177,7 @@ func generateSrpHash(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-func generateInputPassword(this js.Value, inps []js.Value) interface{} {
+func generateInputPassword(this js.Value, args []js.Value) interface{} {
 	go func(inps []js.Value) {
 		id := int64(inps[0].Float())
 		pass, err := base64.StdEncoding.DecodeString(inps[1].String())
@@ -196,7 +196,7 @@ func generateInputPassword(this js.Value, inps []js.Value) interface{} {
 		}
 
 		js.Global().Call("jsGenInputPassword", id, base64.StdEncoding.EncodeToString(res))
-	}(inps)
+	}(args)
 	return nil
 }
 
