@@ -20,6 +20,7 @@ type River struct {
 	authID       int64
 	authKey      []byte
 	messageSeq   int64
+	sessionSeq   int64
 	serverKeys   river_conn.ServerKeys
 	dh           *dhkx.DHGroup
 	clientDhKey  *dhkx.DHKey
@@ -49,6 +50,10 @@ func (r *River) Load(connInfo, serverKeys string) (err error) {
 	r.authID = r.ConnInfo.AuthID
 	r.authKey = r.ConnInfo.AuthKey
 	return
+}
+
+func (r *River) SessionInc() {
+	r.sessionSeq++
 }
 
 func (r *River) AuthStep1(cb Callback) []byte {
@@ -288,11 +293,13 @@ func (r *River) Encode(in *msg.MessageEnvelope) (bytes []byte, err error) {
 
 		protoMessage.AuthID = r.authID
 		r.messageSeq++
+		now := r.ConnInfo.Now()
 		encryptedPayload := msg.ProtoEncryptedPayload{
 			ServerSalt: 234242, // TODO:: ServerSalt ?
+			SessionID:  now<<32 | r.sessionSeq,
 			Envelope:   in,
 		}
-		encryptedPayload.MessageID = uint64(r.ConnInfo.Now()<<32 | r.messageSeq)
+		encryptedPayload.MessageID = uint64(now<<32 | r.messageSeq)
 		unencryptedBytes, err = encryptedPayload.Marshal()
 		if err != nil {
 			return

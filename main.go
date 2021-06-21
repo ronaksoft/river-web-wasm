@@ -21,6 +21,7 @@ func main() {
 
 	global := js.Global()
 	global.Set("wasmLoad", js.FuncOf(load))
+	global.Set("wasmSessionInc", js.FuncOf(sessionInc))
 	global.Set("wasmSetServerTime", js.FuncOf(setServerTime))
 	global.Set("wasmAuth", js.FuncOf(auth))
 	global.Set("wasmDecode", js.FuncOf(decode))
@@ -42,6 +43,11 @@ func load(this js.Value, args []js.Value) interface{} {
 		return err.Error()
 	}
 
+	return nil
+}
+
+func sessionInc(this js.Value, args []js.Value) interface{} {
+	_river.SessionInc()
 	return nil
 }
 
