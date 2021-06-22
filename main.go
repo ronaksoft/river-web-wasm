@@ -57,71 +57,71 @@ func setServerTime(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-func auth(this js.Value, args []js.Value) interface{} {
-	go func(inps []js.Value) {
-		id := int64(inps[0].Float())
-		step := int64(inps[1].Float())
-		var (
-			bytes []byte
-			err   error
-			enc   []byte
-		)
-		switch step {
-		case 1:
-			bytes = _river.AuthStep1(dispatchProgress)
-		case 2:
-			enc, err = base64.StdEncoding.DecodeString(inps[2].String())
-			if err != nil {
-				return
-			}
-
-			bytes, err = _river.AuthStep2(enc, dispatchProgress)
-			if err != nil {
-				return
-			}
-		case 3:
-			enc, err = base64.StdEncoding.DecodeString(inps[2].String())
-			if err != nil {
-				return
-			}
-
-			bytes, err = _river.AuthStep3(enc, dispatchProgress)
-			if err != nil {
-				//fmt.Println(err)
-				return
-			}
+func auth(this js.Value, inps []js.Value) interface{} {
+	//go func(inps []js.Value) {
+	id := int64(inps[0].Float())
+	step := int64(inps[1].Float())
+	var (
+		bytes []byte
+		err   error
+		enc   []byte
+	)
+	switch step {
+	case 1:
+		bytes = _river.AuthStep1(dispatchProgress)
+	case 2:
+		enc, err = base64.StdEncoding.DecodeString(inps[2].String())
+		if err != nil {
+			return nil
 		}
 
-		js.Global().Call("jsAuth", id, step, base64.StdEncoding.EncodeToString(bytes))
-	}(args)
+		bytes, err = _river.AuthStep2(enc, dispatchProgress)
+		if err != nil {
+			return nil
+		}
+	case 3:
+		enc, err = base64.StdEncoding.DecodeString(inps[2].String())
+		if err != nil {
+			return nil
+		}
+
+		bytes, err = _river.AuthStep3(enc, dispatchProgress)
+		if err != nil {
+			//fmt.Println(err)
+			return nil
+		}
+	}
+
+	js.Global().Call("jsAuth", id, step, base64.StdEncoding.EncodeToString(bytes))
+	//}(args)
 	return nil
 }
 
-func decode(this js.Value, args []js.Value) interface{} {
-	go func(inps []js.Value) {
-		withParse := inps[0].Bool()
+func decode(this js.Value, inps []js.Value) interface{} {
+	//go func(inps []js.Value) {
+	withParse := inps[0].Bool()
 
-		enc, err := base64.StdEncoding.DecodeString(inps[1].String())
-		if err != nil {
-			return
+	enc, err := base64.StdEncoding.DecodeString(inps[1].String())
+	if err != nil {
+		return nil
+	}
+
+	env, err := _river.Decode(enc)
+	if err != nil || env == nil {
+		return nil
+	}
+
+	reqId := int64(inps[2].Float())
+
+	if withParse {
+		parseEnvelope(env)
+	} else {
+		if reqId != 0 {
+			env.RequestID = uint64(reqId)
 		}
-
-		env, err := _river.Decode(enc)
-		if err != nil || env == nil {
-			return
-		}
-
-		reqId := int64(inps[2].Float())
-
-		if withParse {
-			parseEnvelope(env)
-		} else {
-			if reqId != 0 {
-				env.RequestID = uint64(reqId)
-			}
-			js.Global().Call("jsDecode", false, env.RequestID, env.Constructor, base64.StdEncoding.EncodeToString(env.Message))
-		}
-	}(args)
+		js.Global().Call("jsDecode", false, env.RequestID, env.Constructor, base64.StdEncoding.EncodeToString(env.Message))
+	}
+	//}(args)
 
 	return nil
 }
@@ -159,50 +159,50 @@ func encode(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-func generateSrpHash(this js.Value, args []js.Value) interface{} {
-	go func(inps []js.Value) {
-		id := int64(inps[0].Float())
-		pass, err := base64.StdEncoding.DecodeString(inps[1].String())
-		if err != nil {
-			return
-		}
+func generateSrpHash(this js.Value, inps []js.Value) interface{} {
+	//go func(inps []js.Value) {
+	id := int64(inps[0].Float())
+	pass, err := base64.StdEncoding.DecodeString(inps[1].String())
+	if err != nil {
+		return nil
+	}
 
-		algorithm := int64(inps[2].Float())
-		algorithmData, err := base64.StdEncoding.DecodeString(inps[3].String())
-		if err != nil {
-			return
-		}
+	algorithm := int64(inps[2].Float())
+	algorithmData, err := base64.StdEncoding.DecodeString(inps[3].String())
+	if err != nil {
+		return nil
+	}
 
-		res, err := _river.GenSrpHash(pass, int64(algorithm), algorithmData)
-		if err != nil {
-			return
-		}
+	res, err := _river.GenSrpHash(pass, int64(algorithm), algorithmData)
+	if err != nil {
+		return nil
+	}
 
-		js.Global().Call("jsGenSrpHash", id, base64.StdEncoding.EncodeToString(res))
-	}(args)
+	js.Global().Call("jsGenSrpHash", id, base64.StdEncoding.EncodeToString(res))
+	//}(args)
 	return nil
 }
 
-func generateInputPassword(this js.Value, args []js.Value) interface{} {
-	go func(inps []js.Value) {
-		id := int64(inps[0].Float())
-		pass, err := base64.StdEncoding.DecodeString(inps[1].String())
-		if err != nil {
-			return
-		}
+func generateInputPassword(this js.Value, inps []js.Value) interface{} {
+	//go func(inps []js.Value) {
+	id := int64(inps[0].Float())
+	pass, err := base64.StdEncoding.DecodeString(inps[1].String())
+	if err != nil {
+		return nil
+	}
 
-		accountPass, err := base64.StdEncoding.DecodeString(inps[2].String())
-		if err != nil {
-			return
-		}
+	accountPass, err := base64.StdEncoding.DecodeString(inps[2].String())
+	if err != nil {
+		return nil
+	}
 
-		res, err := _river.GenInputPassword(pass, accountPass)
-		if err != nil {
-			return
-		}
+	res, err := _river.GenInputPassword(pass, accountPass)
+	if err != nil {
+		return nil
+	}
 
-		js.Global().Call("jsGenInputPassword", id, base64.StdEncoding.EncodeToString(res))
-	}(args)
+	js.Global().Call("jsGenInputPassword", id, base64.StdEncoding.EncodeToString(res))
+	//}(args)
 	return nil
 }
 
