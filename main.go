@@ -126,35 +126,35 @@ func decode(this js.Value, inps []js.Value) interface{} {
 	return nil
 }
 
-func encode(this js.Value, args []js.Value) interface{} {
-	go func(inps []js.Value) {
-		withSend := inps[0].Bool()
+func encode(this js.Value, inps []js.Value) interface{} {
+	//go func(inps []js.Value) {
+	withSend := inps[0].Bool()
 
-		env := new(msg.MessageEnvelope)
+	env := new(msg.MessageEnvelope)
 
-		env.RequestID = uint64(inps[1].Float())
-		env.Constructor = int64(inps[2].Float())
-		enc, err := base64.StdEncoding.DecodeString(inps[3].String())
-		if err != nil {
-			return
+	env.RequestID = uint64(inps[1].Float())
+	env.Constructor = int64(inps[2].Float())
+	enc, err := base64.StdEncoding.DecodeString(inps[3].String())
+	if err != nil {
+		return nil
+	}
+	env.Message = enc
+
+	if len(inps) > 4 {
+		teamId := inps[4].String()
+		teamAccessHash := inps[5].String()
+		if teamId != "0" && teamAccessHash != "0" {
+			env.Header = river.TeamHeader(teamId, teamAccessHash)
 		}
-		env.Message = enc
+	}
 
-		if len(inps) > 4 {
-			teamId := inps[4].String()
-			teamAccessHash := inps[5].String()
-			if teamId != "0" && teamAccessHash != "0" {
-				env.Header = river.TeamHeader(teamId, teamAccessHash)
-			}
-		}
+	bytes, err := _river.Encode(env)
+	if err != nil {
+		return nil
+	}
 
-		bytes, err := _river.Encode(env)
-		if err != nil {
-			return
-		}
-
-		js.Global().Call("jsEncode", withSend, env.RequestID, base64.StdEncoding.EncodeToString(bytes))
-	}(args)
+	js.Global().Call("jsEncode", withSend, env.RequestID, base64.StdEncoding.EncodeToString(bytes))
+	//}(args)
 
 	return nil
 }
